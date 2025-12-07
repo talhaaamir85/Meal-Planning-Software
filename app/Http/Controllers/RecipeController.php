@@ -78,7 +78,7 @@ class RecipeController extends Controller
     /**
      * Calculate totals for a recipe
      */
-    protected function calculateTotals(Recipe $recipe)
+    public function calculateTotals(Recipe $recipe)
     {
         $totals = [
             'calories' => 0,

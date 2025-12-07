@@ -30,18 +30,19 @@ class DashboardController extends Controller
             'fiber' => 0,
             'co2e_kg' => 0,
         ];
+foreach ($meals as $meal) {
+    $servings = $meal->servings;
+    $recipeTotals = $meal->recipe->totals;
 
-        foreach ($meals as $meal) {
-            $servings = $meal->servings;
-            $recipeTotals = $meal->recipe->totals;
-
-            $totals['calories'] += $recipeTotals->calories * $servings;
-            $totals['protein'] += $recipeTotals->protein * $servings;
-            $totals['carbs'] += $recipeTotals->carbs * $servings;
-            $totals['fat'] += $recipeTotals->fat * $servings;
-            $totals['fiber'] += $recipeTotals->fiber * $servings;
-            $totals['co2e_kg'] += $recipeTotals->co2e_kg * $servings;
-        }
+    if($recipeTotals) { // <--- add this check
+        $totals['calories'] += $recipeTotals->calories * $servings;
+        $totals['protein'] += $recipeTotals->protein * $servings;
+        $totals['carbs'] += $recipeTotals->carbs * $servings;
+        $totals['fat'] += $recipeTotals->fat * $servings;
+        $totals['fiber'] += $recipeTotals->fiber * $servings;
+        $totals['co2e_kg'] += $recipeTotals->co2e_kg * $servings;
+    }
+}
 
         // Get active goals
         $goals = $user->goals()->where('active', true)->get();

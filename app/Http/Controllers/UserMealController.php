@@ -17,7 +17,8 @@ class UserMealController extends Controller
         $user = Auth::user();
         $meals = $user->meals()->with('recipe')->orderBy('meal_date', 'desc')->get();
 
-        return view('user_meals.index', compact('meals'));
+       return view('user_meals.index', compact('meals'));
+
     }
 
     /**
