@@ -76,7 +76,8 @@ class RecipeController extends Controller
     }
 
     /**
-     * Calculate totals for a recipe
+     * 
+     * Calculate totals for a recipe yes it 
      */
     public function calculateTotals(Recipe $recipe)
     {
