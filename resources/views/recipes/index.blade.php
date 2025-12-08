@@ -3,6 +3,9 @@
 @section('content')
 <h1>Recipes</h1>
 <a href="{{ route('recipes.create') }}">Add New Recipe</a>
+<a href="{{ route('recipes.suggestions') }}" class="px-4 py-2 bg-green-600 text-black rounded mb-4 inline-block">
+    Suggested Recipes
+</a>
 
 <table border="1" cellpadding="5">
     <tr>

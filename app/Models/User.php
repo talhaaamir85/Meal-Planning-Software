@@ -41,4 +41,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(BiometricEntry::class);
     }
+    public function mealPlans()
+{
+    return $this->hasMany(MealPlan::class);
+}
+
 }

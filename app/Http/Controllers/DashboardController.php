@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\UserMeal;
 use App\Models\UserGoal;
+use App\Models\BiometricEntry; // <- New model for biometrics
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -18,7 +19,9 @@ class DashboardController extends Controller
         $user = Auth::user();
         $date = $request->date ? Carbon::parse($request->date) : Carbon::today();
 
-        // Get meals for the day
+        // ========================================
+        // Existing: Get meals for the day
+        // ========================================
         $meals = $user->meals()->with('recipe.totals')->whereDate('meal_date', $date)->get();
 
         // Calculate total nutrition
@@ -30,24 +33,26 @@ class DashboardController extends Controller
             'fiber' => 0,
             'co2e_kg' => 0,
         ];
-foreach ($meals as $meal) {
-    $servings = $meal->servings;
-    $recipeTotals = $meal->recipe->totals;
 
-    if($recipeTotals) { // <--- add this check
-        $totals['calories'] += $recipeTotals->calories * $servings;
-        $totals['protein'] += $recipeTotals->protein * $servings;
-        $totals['carbs'] += $recipeTotals->carbs * $servings;
-        $totals['fat'] += $recipeTotals->fat * $servings;
-        $totals['fiber'] += $recipeTotals->fiber * $servings;
-        $totals['co2e_kg'] += $recipeTotals->co2e_kg * $servings;
-    }
-}
+        foreach ($meals as $meal) {
+            $servings = $meal->servings;
+            $recipeTotals = $meal->recipe->totals;
 
-        // Get active goals
+            if($recipeTotals) {
+                $totals['calories'] += $recipeTotals->calories * $servings;
+                $totals['protein'] += $recipeTotals->protein * $servings;
+                $totals['carbs'] += $recipeTotals->carbs * $servings;
+                $totals['fat'] += $recipeTotals->fat * $servings;
+                $totals['fiber'] += $recipeTotals->fiber * $servings;
+                $totals['co2e_kg'] += $recipeTotals->co2e_kg * $servings;
+            }
+        }
+
+        // ========================================
+        // Existing: Get active goals
+        // ========================================
         $goals = $user->goals()->where('active', true)->get();
 
-        // Calculate progress
         $progress = [];
         foreach ($goals as $goal) {
             $consumed = $totals[$goal->nutrient] ?? 0;
@@ -60,6 +65,29 @@ foreach ($meals as $meal) {
             ];
         }
 
-        return view('dashboard.index', compact('date', 'meals', 'totals', 'goals', 'progress'));
+        // ========================================
+        // NEW: Biometrics data for charts
+        // ========================================
+        $biometricEntries = $user->biometrics()->orderBy('recorded_at')->get();
+
+        $chartData = [
+            'dates' => $biometricEntries->pluck('recorded_at')->map(fn($d) => $d->format('Y-m-d')),
+            'weight' => $biometricEntries->pluck('weight_kg'),
+            'systolic' => $biometricEntries->pluck('blood_pressure_systolic'),
+            'diastolic' => $biometricEntries->pluck('blood_pressure_diastolic'),
+            'heart_rate' => $biometricEntries->pluck('heart_rate'),
+        ];
+
+        // ========================================
+        // Return all data to view
+        // ========================================
+        return view('dashboard.index', compact(
+            'date', 
+            'meals', 
+            'totals', 
+            'goals', 
+            'progress', 
+            'chartData' // <- New
+        ));
     }
 }

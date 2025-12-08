@@ -1,4 +1,26 @@
 @extends('layouts.app')
+<nav style="margin-bottom:20px;">
+    <a href="{{ route('user_meals.index') }}" class="btn btn-secondary" style="margin-right:8px;">All Meals</a>
+    <a href="{{ route('recipes.index') }}" class="btn btn-secondary" style="margin-right:8px;">Recipes</a>
+   <a href="{{ route('user_goals.index') }}" class="btn btn-secondary" style="margin-right:8px;">My Goals</a>
+     <a href="{{ route('biometric_entries.index') }}" class="btn btn-secondary" style="margin-right:8px;">
+    My Biometrics
+</a>
+<a href="{{ route('meal_plans.index') }}" class="nav-link">Meal Plan</a>
+
+    <a href="{{ route('profile.edit') }}" class="btn btn-secondary">Profile</a>
+   
+
+    <a href="{{ route('logout') }}" class="btn btn-danger" style="margin-right:8px;"
+       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+       Logout
+    </a>
+</nav>
+
+
+<form id="logout-form" action="{{ route('logout') }}" method="POST">
+    @csrf
+</form>
 
 @section('content')
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">

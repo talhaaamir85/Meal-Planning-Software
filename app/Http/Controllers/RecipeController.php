@@ -106,4 +106,12 @@ class RecipeController extends Controller
             $totals
         );
     }
+   
+public function suggestions()
+{
+    $recipes = Recipe::suggestForUser(auth()->user());
+    return view('recipes.suggestions', compact('recipes'));
+}
+
+
 }

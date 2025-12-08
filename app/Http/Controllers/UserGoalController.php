@@ -9,35 +9,36 @@ use Illuminate\Support\Facades\Auth;
 class UserGoalController extends Controller
 {
     /**
-     * List all goals of logged-in user
+     * Display a listing of the user's goals.
      */
     public function index()
     {
-        $goals = Auth::user()->goals()->get();
+        $goals = Auth::user()->goals()->orderByDesc('created_at')->get();
         return view('user_goals.index', compact('goals'));
     }
 
     /**
-     * Show form to create a new goal
+     * Show the form for creating a new goal.
      */
     public function create()
     {
+        // list of nutrients the user can choose from
         $nutrients = ['calories', 'protein', 'carbs', 'fat', 'fiber'];
         return view('user_goals.create', compact('nutrients'));
     }
 
     /**
-     * Store a new goal
+     * Store a newly created goal in storage.
      */
     public function store(Request $request)
     {
         $request->validate([
-            'nutrient' => 'required|string',
+            'nutrient' => 'required|string|in:calories,protein,carbs,fat,fiber',
             'target_value' => 'required|numeric|min:0',
-            'unit' => 'nullable|string',
+            'unit' => 'nullable|string|max:10',
             'direction' => 'required|in:min,max',
             'period' => 'required|in:day,week',
-            'weight' => 'nullable|numeric|min:0.1',
+            'weight' => 'nullable|numeric|min:0',
         ]);
 
         UserGoal::create([
@@ -55,11 +56,12 @@ class UserGoalController extends Controller
     }
 
     /**
-     * Mark a goal as inactive
+     * Deactivate a user's goal.
      */
     public function deactivate(UserGoal $userGoal)
     {
-        if ($userGoal->user_id != Auth::id()) {
+        // ensure the goal belongs to the logged-in user
+        if ($userGoal->user_id !== Auth::id()) {
             abort(403);
         }
 
@@ -67,4 +69,30 @@ class UserGoalController extends Controller
 
         return redirect()->route('user_goals.index')->with('success', 'Goal deactivated.');
     }
+public function edit(UserGoal $user_goal)
+{
+    $goals = UserGoal::where('user_id', auth()->id())->get();
+    return view('user_goals.edit', compact('goals'));
+}
+
+public function update(Request $request)
+{
+    foreach ($request->goals as $id => $data) {
+        $goal = UserGoal::find($id);
+        if (!$goal) continue;
+
+        $goal->target_value = $data['target_value'] ?? $goal->target_value;
+        $goal->unit = $data['unit'] ?? $goal->unit;
+        $goal->direction = $data['direction'] ?? $goal->direction;
+        $goal->period = $data['period'] ?? $goal->period;
+        $goal->weight = $data['weight'] ?? $goal->weight;
+        $goal->active = isset($data['active']) ? true : false; // handle checkbox
+        $goal->save();
+    }
+
+    return redirect()->route('user_goals.index')->with('success', 'Goals updated successfully.');
+}
+
+
+
 }

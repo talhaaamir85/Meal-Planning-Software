@@ -4,95 +4,74 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
-use App\Models\Ingredient;
-use App\Models\NutritionValue;
-use App\Models\CarbonValue;
 use App\Models\Recipe;
-use App\Models\UserMeal;
+use App\Models\RecipeTotal;
 use App\Models\UserGoal;
+use App\Models\BiometricEntry;
 
 class DemoDataSeeder extends Seeder
 {
     public function run()
     {
-        // Get the first user (assumes you have at least 1 user)
-        $user = User::first();
-        if (!$user) {
-            $this->command->info('No users found. Create at least one user first.');
-            return;
-        }
-
-        $this->command->info('Seeding demo ingredients...');
-
-        // Ingredients
-        $ingredientsData = [
-            ['name' => 'Chicken Breast', 'unit' => 'g', 'nutrition' => ['calories_kcal'=>165,'protein_g'=>31,'carbs_g'=>0,'fat_g'=>3.6,'fiber_g'=>0,'sugar_g'=>0,'sodium_mg'=>74],'carbon'=>6.9],
-            ['name' => 'Rice', 'unit' => 'g', 'nutrition' => ['calories_kcal'=>130,'protein_g'=>2.4,'carbs_g'=>28,'fat_g'=>0.3,'fiber_g'=>0.4,'sugar_g'=>0,'sodium_mg'=>1],'carbon'=>2.7],
-            ['name' => 'Broccoli', 'unit' => 'g', 'nutrition' => ['calories_kcal'=>34,'protein_g'=>2.8,'carbs_g'=>7,'fat_g'=>0.4,'fiber_g'=>2.6,'sugar_g'=>1.7,'sodium_mg'=>33],'carbon'=>0.5],
-        ];
-
-        $ingredients = [];
-
-        foreach ($ingredientsData as $data) {
-            $ingredient = Ingredient::firstOrCreate(['name'=>$data['name']], ['unit'=>$data['unit']]);
-
-            // Nutrition
-            if (!$ingredient->nutrition) {
-                $ingredient->nutrition()->create(array_merge(['per_100_unit'=>100], $data['nutrition']));
-            }
-
-            // Carbon
-            if (!$ingredient->carbon) {
-                $ingredient->carbon()->create(['per_100_unit'=>100,'co2e_kg'=>$data['carbon']]);
-            }
-
-            $ingredients[$data['name']] = $ingredient;
-        }
-
-        $this->command->info('Seeding demo recipes...');
-
-        // Recipes
-        $recipe1 = Recipe::firstOrCreate(['title'=>'Grilled Chicken'], ['servings'=>1]);
-        $recipe1->ingredients()->syncWithoutDetaching([
-            $ingredients['Chicken Breast']->id => ['quantity'=>150,'unit'=>'g'],
-            $ingredients['Broccoli']->id => ['quantity'=>100,'unit'=>'g']
+        // 1. Create a demo user
+        $user = User::factory()->create([
+            'name' => 'Husnain Ali',
+            'email' => 'husnainali2721@gmail.com',
+            'password' => bcrypt('password123'),
         ]);
 
-        $recipe2 = Recipe::firstOrCreate(['title'=>'Chicken & Rice'], ['servings'=>1]);
-        $recipe2->ingredients()->syncWithoutDetaching([
-            $ingredients['Chicken Breast']->id => ['quantity'=>100,'unit'=>'g'],
-            $ingredients['Rice']->id => ['quantity'=>100,'unit'=>'g']
-        ]);
-
-        $this->command->info('Seeding demo meals...');
-
-        // Meals for user
-        UserMeal::firstOrCreate(
-            ['user_id'=>$user->id,'recipe_id'=>$recipe1->id,'meal_date'=>now()->toDateString()],
-            ['servings'=>1]
-        );
-
-        UserMeal::firstOrCreate(
-            ['user_id'=>$user->id,'recipe_id'=>$recipe2->id,'meal_date'=>now()->toDateString()],
-            ['servings'=>1]
-        );
-
-        $this->command->info('Seeding demo goals...');
-
-        // Goals
-        $goalsData = [
-            ['nutrient'=>'calories','target_value'=>500,'unit'=>'kcal','direction'=>'max','period'=>'day'],
-            ['nutrient'=>'protein','target_value'=>50,'unit'=>'g','direction'=>'min','period'=>'day'],
-            ['nutrient'=>'fiber','target_value'=>30,'unit'=>'g','direction'=>'min','period'=>'day'],
+        // 2. Create recipes with totals
+        $recipes = [
+            ['title' => 'Grilled Chicken', 'servings' => 1, 'totals' => ['calories'=>200, 'protein'=>10, 'carbs'=>0, 'fat'=>5, 'fiber'=>0, 'co2e_kg'=>0.1]],
+            ['title' => 'Chicken & Rice', 'servings' => 1, 'totals' => ['calories'=>467.5, 'protein'=>57, 'carbs'=>60, 'fat'=>10, 'fiber'=>5, 'co2e_kg'=>0.3]],
+            ['title' => 'Test Salad', 'servings' => 1, 'totals' => ['calories'=>200, 'protein'=>10, 'carbs'=>20, 'fat'=>5, 'fiber'=>5, 'co2e_kg'=>0.2]],
         ];
 
-        foreach ($goalsData as $goal) {
-            UserGoal::firstOrCreate(
-                ['user_id'=>$user->id,'nutrient'=>$goal['nutrient']],
-                array_merge($goal,['active'=>true])
-            );
+        foreach ($recipes as $r) {
+            $recipe = Recipe::create([
+                'title' => $r['title'],
+                'servings' => $r['servings'],
+            ]);
+            $recipe->totals()->create($r['totals']);
         }
 
-        $this->command->info('Demo data seeding completed!');
+        // 3. Add user goals
+        $user->goals()->createMany([
+            [
+                'nutrient' => 'protein',
+                'target_value' => 20,
+                'direction' => 'max',
+                'period' => 'day',
+                'active' => true,
+            ],
+            [
+                'nutrient' => 'calories',
+                'target_value' => 300,
+                'direction' => 'min',
+                'period' => 'day',
+                'active' => true,
+            ],
+        ]);
+
+        // 4. Add biometric entries
+        BiometricEntry::create([
+            'user_id' => $user->id,
+            'recorded_at' => now()->subDays(5),
+            'weight_kg' => 70.5,
+            'blood_pressure_systolic' => 120,
+            'blood_pressure_diastolic' => 80,
+            'heart_rate' => 72,
+            'note' => 'Feeling good today.',
+        ]);
+
+        BiometricEntry::create([
+            'user_id' => $user->id,
+            'recorded_at' => now(),
+            'weight_kg' => 69.8,
+            'blood_pressure_systolic' => 130,
+            'blood_pressure_diastolic' => 85,
+            'heart_rate' => 75,
+            'note' => 'A bit stressed.',
+        ]);
     }
 }
