@@ -15,8 +15,8 @@ class DemoDataSeeder extends Seeder
     {
         // 1. Create a demo user
         $user = User::factory()->create([
-            'name' => 'Husnain Ali',
-            'email' => 'husnainali2721@gmail.com',
+            'name' => 'Daniyal Ahmad',
+            'email' => 'talha.aamir85@gmail.com',
             'password' => bcrypt('password123'),
         ]);
 
